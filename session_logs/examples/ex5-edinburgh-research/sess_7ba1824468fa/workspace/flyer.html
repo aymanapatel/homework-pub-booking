@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Haymarket Tap event flyer</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, Helvetica, sans-serif;
+      color: #1d1d1f;
+      background: #f7f4ee;
+    }
+    article {
+      max-width: 720px;
+      margin: 40px auto;
+      padding: 32px;
+      background: #fff;
+      border: 1px solid #d8d2c7;
+    }
+    h1 {
+      margin: 0 0 8px;
+      font-size: 34px;
+    }
+    .intro {
+      margin: 0 0 24px;
+      color: #555;
+    }
+    dl {
+      display: grid;
+      grid-template-columns: 160px 1fr;
+      gap: 10px 18px;
+      margin: 24px 0;
+    }
+    dt {
+      font-weight: 700;
+    }
+    dd {
+      margin: 0;
+    }
+    .note {
+      padding-top: 18px;
+      border-top: 1px solid #e5dfd5;
+      font-weight: 700;
+    }
+  </style>
+</head>
+<body>
+  <article>
+    <h1><span data-testid="venue_name">Haymarket Tap</span> pub night</h1>
+    <p class="intro">A relaxed Edinburgh evening for a small group.</p>
+    <dl>
+      <dt>Address</dt>
+      <dd><span data-testid="venue_address">12 Dalry Rd, Edinburgh EH11 2BG</span></dd>
+      <dt>Date</dt>
+      <dd><span data-testid="date">2026-04-25</span> at <span data-testid="time">19:30</span></dd>
+      <dt>Party size</dt>
+      <dd><span data-testid="party_size">6</span> guests</dd>
+      <dt>Weather</dt>
+      <dd><span data-testid="condition">cloudy</span>, <span data-testid="temperature_c">12C</span></dd>
+      <dt>Total</dt>
+      <dd><span data-testid="total_gbp">£540</span></dd>
+      <dt>Deposit</dt>
+      <dd><span data-testid="deposit_required_gbp">£0</span></dd>
+    </dl>
+    <p class="note">No deposit required for this booking.</p>
+  </article>
+</body>
+</html>

@@ -213,8 +213,6 @@ async def run_scenario(real: bool) -> int:
                 "  4. generate_flyer(event_details={...})  <-- MUST be called\n"
                 "  5. complete_task(result={'flyer': 'workspace/flyer.html', ...})\n\n"
                 "Do NOT call complete_task until you have called generate_flyer. "
-                "The complete_task tool will reject early completion if "
-                "workspace/flyer.html does not exist. "
                 "The scenario is graded by the existence of workspace/flyer.html, "
                 "not by your final text response. The flyer is HTML — exact tool "
                 "names and argument shapes are in each tool's docstring; call them "
