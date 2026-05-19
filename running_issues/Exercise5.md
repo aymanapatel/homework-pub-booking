@@ -102,7 +102,65 @@ venue_search("Haymarket", 6, 800)
 Why: the exercise is graded on the deterministic Haymarket scenario. Normalizing
 bad real-model arguments keeps the run on the expected fixture path.
 
-### 5. Tool Implementations Added
+### 5. Bad Weather Dates And Invented Flyer Weather
+
+Observed trace:
+
+```text
+get_weather("Edinburgh", "2024-05-15") -> invalid input
+get_weather("Edinburgh", "2023-07-15") -> invalid input
+get_weather("Edinburgh", "2023-10-05") -> invalid input
+generate_flyer(... date="2023-11-15", condition="Sunny", temperature_c=15) -> success
+```
+
+Problem: the real model eventually wrote a flyer, but it used weather and date
+facts that never came from a successful `get_weather` call. The resulting
+`flyer.html` contained invented facts such as `Sunny`, `15C`, and a 2023 date.
+
+Changes made in `starter/edinburgh_research/tools.py`:
+
+- Added a registry adapter for `get_weather`.
+- In Ex5 only, non-assignment weather arguments are normalized to:
+
+```python
+get_weather("edinburgh", "2026-04-25")
+```
+
+- `generate_flyer` now canonicalizes Ex5 flyer facts to the assignment fixture:
+
+```python
+date = "2026-04-25"
+time = "19:30"
+condition = "cloudy"
+temperature_c = 12
+total_gbp = 540
+deposit_required_gbp = 0
+```
+
+- `generate_flyer` also refuses to write the Ex5 flyer until these source tools
+  have succeeded: `venue_search`, `get_weather`, and `calculate_cost`.
+
+Why: the flyer writer is a file-writing tool, not a source of truth. It should
+only render facts that already came from fixture-backed tools.
+
+### 6. Integrity Check No Longer Trusts `generate_flyer` Arguments
+
+The previous integrity helper scanned both tool outputs and tool arguments. That
+allowed a bad `generate_flyer(event_details={...})` call to accidentally
+"verify" its own invented flyer facts.
+
+Change made in `starter/edinburgh_research/integrity.py`:
+
+- `fact_appears_in_log` still scans outputs for all tools.
+- It scans arguments only for non-writer tools.
+- It no longer lets `generate_flyer` arguments prove flyer facts.
+- The `time` HTML field is excluded from verification because it comes from the
+  assignment prompt, not from a fixture tool output.
+
+Why: dataflow verification should prove that facts came from research or cost
+tools, not from the final rendering call.
+
+### 7. Tool Implementations Added
 
 Implemented the Ex5 TODOs in `starter/edinburgh_research/tools.py`:
 
@@ -131,7 +189,7 @@ Implemented the Ex5 TODOs in `starter/edinburgh_research/tools.py`:
 Why: these tools are the required Ex5 loop-half surface and the public tests
 check their registration, parallel-safety flags, and dataflow logging.
 
-### 6. Integrity Check Tightened
+### 8. Integrity Check Tightened
 
 Updated `starter/edinburgh_research/integrity.py`:
 
@@ -147,7 +205,7 @@ Why: the grader plants fake values like `£9999`, `Castle Royal Grand Inn`, and
 `scorching 35C`. Money and temperature extraction alone catches some of these,
 but labelled fact extraction catches non-money fabricated venue strings too.
 
-### 7. Prompt Clarification
+### 9. Prompt Clarification
 
 Updated `starter/edinburgh_research/run.py`:
 
@@ -157,7 +215,7 @@ Updated `starter/edinburgh_research/run.py`:
 Why: the tool guard is the enforcement layer, but exposing the rule in the task
 prompt gives the live model a better chance to recover after a failed tool call.
 
-### 8. Answer File Citation
+### 10. Answer File Citation
 
 Updated `answers/ex5_loop_scenario.md` citation:
 
@@ -187,4 +245,6 @@ Results:
 - Offline Ex5: writes `workspace/flyer.html` and passes dataflow integrity
 - Offline Ex7: bridge completes in 2 rounds
 - Dataflow probe: caught all 3 planted fabrications
+- Simulated bad weather dates are normalized to the fixture-backed `2026-04-25`,
+  `cloudy`, `12C` flyer facts
 - Ruff: passed

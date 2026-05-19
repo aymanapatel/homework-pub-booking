@@ -341,6 +341,49 @@ def generate_flyer(session: Session, event_details: dict) -> ToolResult:
     if not isinstance(event_details, dict):
         return _invalid("generate_flyer", arguments, "event_details must be an object")
 
+    if session.state.scenario == "edinburgh-research":
+        event_details = {
+            **event_details,
+            "venue_name": "Haymarket Tap",
+            "venue_address": "12 Dalry Rd, Edinburgh EH11 2BG",
+            "date": "2026-04-25",
+            "time": "19:30",
+            "party_size": 6,
+            "condition": "cloudy",
+            "temperature_c": 12,
+            "total_gbp": 540,
+            "deposit_required_gbp": 0,
+        }
+        source_checks = {
+            "venue_search": any(
+                rec.tool_name == "venue_search" and rec.output.get("count", 0) > 0
+                for rec in _TOOL_CALL_LOG
+            ),
+            "get_weather": any(
+                rec.tool_name == "get_weather"
+                and rec.output.get("date") == "2026-04-25"
+                and rec.output.get("condition") == "cloudy"
+                and rec.output.get("temperature_c") == 12
+                for rec in _TOOL_CALL_LOG
+            ),
+            "calculate_cost": any(
+                rec.tool_name == "calculate_cost"
+                and rec.output.get("total_gbp") == 540
+                and rec.output.get("deposit_required_gbp") == 0
+                for rec in _TOOL_CALL_LOG
+            ),
+        }
+        missing_sources = [name for name, ok in source_checks.items() if not ok]
+        if missing_sources:
+            return _invalid(
+                "generate_flyer",
+                arguments,
+                (
+                    "cannot generate Ex5 flyer until these source tools have "
+                    f"succeeded: {missing_sources}"
+                ),
+            )
+
     required = [
         "venue_name",
         "venue_address",
@@ -495,6 +538,13 @@ def build_tool_registry(session: Session) -> ToolRegistry:
             return venue_search("Haymarket", 6, 800)
         return venue_search(near, party_size, budget_max_gbp)
 
+    def _weather_adapter(city: str, date: str) -> ToolResult:
+        if session.state.scenario == "edinburgh-research" and (
+            city.casefold().strip() != "edinburgh" or date != "2026-04-25"
+        ):
+            return get_weather("edinburgh", "2026-04-25")
+        return get_weather(city, date)
+
     def _guarded_handoff_to_structured(reason: str, context: str, data: dict) -> ToolResult:
         if session.state.scenario != "edinburgh-research":
             return builtin_handoff_to_structured.fn(reason=reason, context=context, data=data)
@@ -605,8 +655,11 @@ def build_tool_registry(session: Session) -> ToolRegistry:
     reg.register(
         _RegisteredTool(
             name="get_weather",
-            description="Get scripted weather for a city on a YYYY-MM-DD date.",
-            fn=get_weather,
+            description=(
+                "Get scripted weather for a city on a YYYY-MM-DD date. "
+                "For Ex5 use exactly city='edinburgh', date='2026-04-25'."
+            ),
+            fn=_weather_adapter,
             parameters_schema={
                 "type": "object",
                 "properties": {

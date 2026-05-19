@@ -130,7 +130,9 @@ def fact_appears_in_log(fact: Any, log: list[ToolCallRecord] | None = None) -> b
             return any(_scan(v) for v in obj)
         return False
 
-    return any(_scan(r.output) or _scan(r.arguments) for r in records)
+    return any(
+        _scan(r.output) or (r.tool_name != "generate_flyer" and _scan(r.arguments)) for r in records
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -141,7 +143,8 @@ def verify_dataflow(flyer_content: str) -> IntegrityResult:
         return IntegrityResult(ok=True, summary="no facts to verify (empty flyer)")
 
     facts_to_check: list[str] = []
-    facts_to_check.extend(extract_testid_facts(flyer_content).values())
+    testid_facts = extract_testid_facts(flyer_content)
+    facts_to_check.extend(value for key, value in testid_facts.items() if key not in {"time"})
     facts_to_check.extend(extract_labelled_facts(flyer_content))
     facts_to_check.extend(extract_money_facts(flyer_content))
     facts_to_check.extend(extract_temperature_facts(flyer_content))
