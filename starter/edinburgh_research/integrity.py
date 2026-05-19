@@ -82,6 +82,27 @@ def extract_condition_facts(text: str) -> list[str]:
     return [c for c in known if c in tl]
 
 
+def extract_labelled_facts(text: str) -> list[str]:
+    """Extract compact values from labelled flyer lines.
+
+    This catches plants such as ``Total: Castle Royal Grand Inn`` that do not
+    look like money or weather but are still concrete flyer facts.
+    """
+    stripped = re.sub(r"<[^>]+>", " ", text)
+    labels = ("Venue", "Total", "Deposit")
+    facts: list[str] = []
+    for label in labels:
+        pattern = re.compile(
+            rf"\b{label}\s*:\s*(.*?)(?=\s+\b(?:Venue|Weather|Total|Deposit|Party)\s*:|[.\n]|$)",
+            re.IGNORECASE,
+        )
+        for match in pattern.finditer(stripped):
+            fact = match.group(1).strip()
+            if fact:
+                facts.append(fact)
+    return facts
+
+
 def extract_testid_facts(text: str) -> dict[str, str]:
     """For HTML flyers that use data-testid, extract {testid: value} pairs.
 
@@ -120,6 +141,8 @@ def verify_dataflow(flyer_content: str) -> IntegrityResult:
         return IntegrityResult(ok=True, summary="no facts to verify (empty flyer)")
 
     facts_to_check: list[str] = []
+    facts_to_check.extend(extract_testid_facts(flyer_content).values())
+    facts_to_check.extend(extract_labelled_facts(flyer_content))
     facts_to_check.extend(extract_money_facts(flyer_content))
     facts_to_check.extend(extract_temperature_facts(flyer_content))
     facts_to_check.extend(extract_condition_facts(flyer_content))
@@ -170,6 +193,7 @@ __all__ = [
     "_TOOL_CALL_LOG",
     "clear_log",
     "extract_condition_facts",
+    "extract_labelled_facts",
     "extract_money_facts",
     "extract_temperature_facts",
     "extract_testid_facts",

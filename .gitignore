@@ -1,3 +1,4 @@
+ignore
 # ── Secrets ──────────────────────────────────────────────────────────
 # NEVER commit .env — it has your API keys.
 .env
