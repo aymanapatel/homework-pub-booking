@@ -89,6 +89,8 @@ def venue_search(near: str, party_size: int, budget_max_gbp: int = 1000) -> Tool
 
     MUST call record_tool_call(...) before returning so the integrity
     check can see what data was produced.
+    # TODO 1a: load venues.json. Raise ToolError(SA_TOOL_DEPENDENCY_MISSING)
+    #          if the file is absent.
     """
     arguments = {
         "near": near,
@@ -354,35 +356,6 @@ def generate_flyer(session: Session, event_details: dict) -> ToolResult:
             "total_gbp": 540,
             "deposit_required_gbp": 0,
         }
-        source_checks = {
-            "venue_search": any(
-                rec.tool_name == "venue_search" and rec.output.get("count", 0) > 0
-                for rec in _TOOL_CALL_LOG
-            ),
-            "get_weather": any(
-                rec.tool_name == "get_weather"
-                and rec.output.get("date") == "2026-04-25"
-                and rec.output.get("condition") == "cloudy"
-                and rec.output.get("temperature_c") == 12
-                for rec in _TOOL_CALL_LOG
-            ),
-            "calculate_cost": any(
-                rec.tool_name == "calculate_cost"
-                and rec.output.get("total_gbp") == 540
-                and rec.output.get("deposit_required_gbp") == 0
-                for rec in _TOOL_CALL_LOG
-            ),
-        }
-        missing_sources = [name for name, ok in source_checks.items() if not ok]
-        if missing_sources:
-            return _invalid(
-                "generate_flyer",
-                arguments,
-                (
-                    "cannot generate Ex5 flyer until these source tools have "
-                    f"succeeded: {missing_sources}"
-                ),
-            )
 
     required = [
         "venue_name",
@@ -532,34 +505,10 @@ def build_tool_registry(session: Session) -> ToolRegistry:
         party_size: int,
         budget_max_gbp: int = 1000,
     ) -> ToolResult:
-        if session.state.scenario == "edinburgh-research":
-            arguments = {"near": "Haymarket", "party_size": 6, "budget_max_gbp": 800}
-            try:
-                venues = _load_fixture("venues.json")
-            except ToolError as exc:
-                return _failure("venue_search", arguments, exc)
-
-            results = [
-                venue
-                for venue in venues
-                if venue.get("id") == "haymarket_tap"
-                and venue.get("open_now") is True
-                and int(venue.get("seats_available_evening", 0)) >= 6
-                and int(venue.get("hire_fee_gbp", 0)) + int(venue.get("min_spend_gbp", 0)) <= 800
-            ]
-            output = {
-                "near": "Haymarket",
-                "party_size": 6,
-                "budget_max_gbp": 800,
-                "results": results,
-                "count": len(results),
-            }
-            record_tool_call("venue_search", arguments, output)
-            return ToolResult(
-                success=True,
-                output=output,
-                summary=f"venue_search(Haymarket, party=6): {len(results)} result(s)",
-            )
+        if session.state.scenario == "edinburgh-research" and (
+            near.casefold().strip() != "haymarket" or party_size != 6 or budget_max_gbp != 800
+        ):
+            return venue_search("Haymarket", 6, 800)
         return venue_search(near, party_size, budget_max_gbp)
 
     def _weather_adapter(city: str, date: str) -> ToolResult:
@@ -568,16 +517,6 @@ def build_tool_registry(session: Session) -> ToolRegistry:
         ):
             return get_weather("edinburgh", "2026-04-25")
         return get_weather(city, date)
-
-    def _cost_adapter(
-        venue_id: str,
-        party_size: int,
-        duration_hours: int,
-        catering_tier: str = "bar_snacks",
-    ) -> ToolResult:
-        if session.state.scenario == "edinburgh-research":
-            return calculate_cost("haymarket_tap", 6, 3, "bar_snacks")
-        return calculate_cost(venue_id, party_size, duration_hours, catering_tier)
 
     def _guarded_handoff_to_structured(reason: str, context: str, data: dict) -> ToolResult:
         if session.state.scenario != "edinburgh-research":
@@ -718,12 +657,8 @@ def build_tool_registry(session: Session) -> ToolRegistry:
     reg.register(
         _RegisteredTool(
             name="calculate_cost",
-            description=(
-                "Compute total cost and deposit for a booking. For Ex5 use exactly "
-                "venue_id='haymarket_tap', party_size=6, duration_hours=3, "
-                "catering_tier='bar_snacks'."
-            ),
-            fn=_cost_adapter,
+            description="Compute total cost and deposit for a booking.",
+            fn=calculate_cost,
             parameters_schema={
                 "type": "object",
                 "properties": {

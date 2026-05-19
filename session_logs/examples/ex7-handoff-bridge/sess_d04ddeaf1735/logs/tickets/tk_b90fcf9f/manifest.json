@@ -1,0 +1,21 @@
+{
+  "ticket_id": "tk_b90fcf9f",
+  "operation": "planner.plan",
+  "started_at": "2026-05-19T08:50:52.920469+00:00",
+  "completed_at": "2026-05-19T08:51:25.751846+00:00",
+  "duration_ms": 32831,
+  "outputs": [
+    {
+      "path": "/Users/aymanpatel/Desktop/nebius/homework-pub-booking/session_logs/examples/ex7-handoff-bridge/sess_d04ddeaf1735/logs/tickets/tk_b90fcf9f/raw_output.json",
+      "sha256": "67393adccb2275ff87be1c2d2523b19ea6d068bed6bfd8262b91c002a06792b8",
+      "size_bytes": 1106,
+      "content_type": "application/json"
+    }
+  ],
+  "metrics": {
+    "num_subgoals": 4,
+    "llm_tokens_in": 266,
+    "llm_tokens_out": 4478,
+    "llm_model": "Qwen/Qwen3-Next-80B-A3B-Thinking"
+  }
+}

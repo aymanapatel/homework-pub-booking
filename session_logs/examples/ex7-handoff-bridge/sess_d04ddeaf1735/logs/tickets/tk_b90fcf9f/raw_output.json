@@ -1,0 +1,44 @@
+[
+  {
+    "id": "sg_1",
+    "description": "Obtain the date for the party from the user",
+    "success_criterion": "User provides a valid date",
+    "estimated_tool_calls": 1,
+    "depends_on": [],
+    "assigned_half": "loop",
+    "status": "pending"
+  },
+  {
+    "id": "sg_2",
+    "description": "Search for available venues in Haymarket for 12 people on the specified date",
+    "success_criterion": "List of available venues returned",
+    "estimated_tool_calls": 1,
+    "depends_on": [
+      "sg_1"
+    ],
+    "assigned_half": "loop",
+    "status": "pending"
+  },
+  {
+    "id": "sg_3",
+    "description": "Confirm venue selection with the user",
+    "success_criterion": "User selects a venue from the options",
+    "estimated_tool_calls": 1,
+    "depends_on": [
+      "sg_2"
+    ],
+    "assigned_half": "structured",
+    "status": "pending"
+  },
+  {
+    "id": "sg_4",
+    "description": "Book the selected venue",
+    "success_criterion": "Booking confirmation received",
+    "estimated_tool_calls": 1,
+    "depends_on": [
+      "sg_3"
+    ],
+    "assigned_half": "loop",
+    "status": "pending"
+  }
+]

@@ -1,0 +1,20 @@
+{
+  "ticket_id": "tk_ee470686",
+  "operation": "executor.run_subgoal/sg_2",
+  "started_at": "2026-05-19T08:52:03.263471+00:00",
+  "completed_at": "2026-05-19T08:52:22.515066+00:00",
+  "duration_ms": 19251,
+  "outputs": [
+    {
+      "path": "/Users/aymanpatel/Desktop/nebius/homework-pub-booking/session_logs/examples/ex7-handoff-bridge/sess_d04ddeaf1735/logs/tickets/tk_ee470686/raw_output.json",
+      "sha256": "0b626c81f022241eac54c359af278e1d55af410267b9cb41758ff820a9de2bd1",
+      "size_bytes": 2560,
+      "content_type": "application/json"
+    }
+  ],
+  "metrics": {
+    "tool_calls": 1,
+    "turns_used": 2,
+    "handoff_requested": false
+  }
+}

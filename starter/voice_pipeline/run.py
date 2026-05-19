@@ -6,11 +6,14 @@ import asyncio
 import os
 import sys
 
+from dotenv import load_dotenv
 from sovereign_agent._internal.paths import user_data_dir
 from sovereign_agent.session.directory import create_session
 
 from starter.voice_pipeline.manager_persona import ManagerPersona
 from starter.voice_pipeline.voice_loop import run_text_mode, run_voice_mode
+
+load_dotenv()
 
 
 async def main_async(voice: bool) -> int:
