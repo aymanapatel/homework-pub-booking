@@ -1,0 +1,3 @@
+{"event_type": "structured.called", "actor": "rasa", "payload": {"has_data": true}}
+{"event_type": "structured.normalised", "actor": "rasa", "payload": {"booking": {"venue_id": "haymarket_tap", "date": "2026-04-25", "time": "19:30", "party_size": 6, "deposit_gbp": 200, "duration_hours": 3, "catering_tier": "bar_snacks"}}}
+{"event_type": "structured.completed", "actor": "rasa", "payload": {"booking_reference": "BK-7D401E9E", "venue_id": "haymarket_tap"}}

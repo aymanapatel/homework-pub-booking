@@ -1,0 +1,3 @@
+{"event_type": "structured.called", "actor": "rasa", "payload": {"has_data": true}}
+{"event_type": "structured.normalised", "actor": "rasa", "payload": {"booking": {"venue_id": "haymarket_tap", "date": "2026-04-25", "time": "19:30", "party_size": 6, "deposit_gbp": 200, "duration_hours": 3, "catering_tier": "bar_snacks"}}}
+{"event_type": "structured.escalated", "actor": "rasa", "payload": {"reason": "sorry, we can't accept this booking. reason: party_too_large"}}

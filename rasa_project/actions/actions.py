@@ -26,7 +26,7 @@ from rasa_sdk import Action, Tracker
 from rasa_sdk.events import SlotSet
 from rasa_sdk.executor import CollectingDispatcher
 
-MAX_PARTY_SIZE_FOR_AUTO_BOOKING = 8
+MAX_PARTY_SIZE_FOR_AUTO_BOOKING = 5
 MAX_DEPOSIT_FOR_AUTO_BOOKING_GBP = 300
 
 
