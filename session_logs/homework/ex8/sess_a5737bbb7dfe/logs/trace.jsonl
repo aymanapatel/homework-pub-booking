@@ -1,4 +1,0 @@
-{"event_type": "voice.utterance_in", "actor": "user", "timestamp": "2026-05-25T13:59:05.244687+00:00", "payload": {"text": "Hello . How are you ?", "turn": 0, "mode": "voice"}}
-{"event_type": "voice.utterance_out", "actor": "manager", "timestamp": "2026-05-25T13:59:06.208855+00:00", "payload": {"text": "I'm fine. What can I dae for ye?", "turn": 0, "mode": "voice"}}
-{"event_type": "voice.utterance_in", "actor": "user", "timestamp": "2026-05-25T13:59:16.210957+00:00", "payload": {"text": "Tell me what to do .", "turn": 1, "mode": "voice"}}
-{"event_type": "voice.utterance_out", "actor": "manager", "timestamp": "2026-05-25T13:59:17.054043+00:00", "payload": {"text": "Tell me the number in yer party and the deposit ye're lookin' tae pay.", "turn": 1, "mode": "voice"}}

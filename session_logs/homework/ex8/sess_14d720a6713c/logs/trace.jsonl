@@ -1,0 +1,12 @@
+{"event_type": "voice.utterance_in", "actor": "user", "timestamp": "2026-05-25T15:25:47.312310+00:00", "payload": {"text": "hi", "turn": 0, "mode": "text"}}
+{"event_type": "voice.utterance_out", "actor": "manager", "timestamp": "2026-05-25T15:25:48.417872+00:00", "payload": {"text": "What can I do for ye? Booking a table, I suppose? How many in yer party?", "turn": 0, "mode": "text"}}
+{"event_type": "voice.utterance_in", "actor": "user", "timestamp": "2026-05-25T15:26:01.134839+00:00", "payload": {"text": "book for 3", "turn": 1, "mode": "text"}}
+{"event_type": "voice.utterance_out", "actor": "manager", "timestamp": "2026-05-25T15:26:02.055576+00:00", "payload": {"text": "Aye, we can do that. I'll pencil you in. What's the date and time?", "turn": 1, "mode": "text"}}
+{"event_type": "voice.utterance_in", "actor": "user", "timestamp": "2026-05-25T15:26:11.669604+00:00", "payload": {"text": "10PM tonight", "turn": 2, "mode": "text"}}
+{"event_type": "voice.utterance_out", "actor": "manager", "timestamp": "2026-05-25T15:26:12.721848+00:00", "payload": {"text": "Aye, we can do that. I'll pencil you in for tonight at 10PM. What's the contact number?", "turn": 2, "mode": "text"}}
+{"event_type": "voice.utterance_in", "actor": "user", "timestamp": "2026-05-25T15:26:16.016115+00:00", "payload": {"text": "2323242323232323", "turn": 3, "mode": "text"}}
+{"event_type": "voice.utterance_out", "actor": "manager", "timestamp": "2026-05-25T15:26:17.124939+00:00", "payload": {"text": "Aye, got it. Tonight, 10PM, three of ye. I'll see ye then.", "turn": 3, "mode": "text"}}
+{"event_type": "voice.utterance_in", "actor": "user", "timestamp": "2026-05-25T15:26:22.267940+00:00", "payload": {"text": "buy", "turn": 4, "mode": "text"}}
+{"event_type": "voice.utterance_out", "actor": "manager", "timestamp": "2026-05-25T15:26:23.084005+00:00", "payload": {"text": "Not here to sell ye anything, just booking tables.", "turn": 4, "mode": "text"}}
+{"event_type": "voice.utterance_in", "actor": "user", "timestamp": "2026-05-25T15:26:28.426345+00:00", "payload": {"text": "bye", "turn": 5, "mode": "text"}}
+{"event_type": "voice.utterance_out", "actor": "manager", "timestamp": "2026-05-25T15:26:28.943384+00:00", "payload": {"text": "Cheerio.", "turn": 5, "mode": "text"}}
