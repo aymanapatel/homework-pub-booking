@@ -1,0 +1,12 @@
+{"event_type": "voice.utterance_in", "actor": "user", "timestamp": "2026-05-25T15:15:31.312256+00:00", "payload": {"text": "I want to a book , a table for ten at Harvard's Tap .", "turn": 0, "mode": "voice"}}
+{"event_type": "voice.utterance_out", "actor": "manager", "timestamp": "2026-05-25T15:15:32.887219+00:00", "payload": {"text": "Declined, too many people. Try The Royal Oak or Bennet's Bar, they can handle larger groups.", "turn": 0, "mode": "voice"}}
+{"event_type": "voice.utterance_in", "actor": "user", "timestamp": "2026-05-25T15:15:47.887176+00:00", "payload": {"text": "Can I do for eight people ?", "turn": 1, "mode": "voice"}}
+{"event_type": "voice.utterance_out", "actor": "manager", "timestamp": "2026-05-25T15:15:49.147791+00:00", "payload": {"text": "Aye, we can do that. I'll pencil you in. What's the contact number?", "turn": 1, "mode": "voice"}}
+{"event_type": "voice.utterance_in", "actor": "user", "timestamp": "2026-05-25T15:16:01.057627+00:00", "payload": {"text": "578790023508 .", "turn": 2, "mode": "voice"}}
+{"event_type": "voice.utterance_out", "actor": "manager", "timestamp": "2026-05-25T15:16:01.761602+00:00", "payload": {"text": "I'll pencil you in. What date and time were you thinkin'?", "turn": 2, "mode": "voice"}}
+{"event_type": "voice.utterance_in", "actor": "user", "timestamp": "2026-05-25T15:16:11.607583+00:00", "payload": {"text": "Tonight at 7 p.m. .", "turn": 3, "mode": "voice"}}
+{"event_type": "voice.utterance_out", "actor": "manager", "timestamp": "2026-05-25T15:16:12.700610+00:00", "payload": {"text": "Aye, 7 p.m. tonight, got it. I'll make sure tae save ye a table.", "turn": 3, "mode": "voice"}}
+{"event_type": "voice.utterance_in", "actor": "user", "timestamp": "2026-05-25T15:16:28.367618+00:00", "payload": {"text": "Can I also have a deposit of \u00a395 ?", "turn": 4, "mode": "voice"}}
+{"event_type": "voice.utterance_out", "actor": "manager", "timestamp": "2026-05-25T15:16:33.489078+00:00", "payload": {"text": "Aye, that's fine. \u00a395 deposit, I'll take that. Confirmation will be sent tae 578790023508.", "turn": 4, "mode": "voice"}}
+{"event_type": "voice.utterance_in", "actor": "user", "timestamp": "2026-05-25T15:16:58.267328+00:00", "payload": {"text": "Goodbye . Thank you .", "turn": 5, "mode": "voice"}}
+{"event_type": "voice.utterance_out", "actor": "manager", "timestamp": "2026-05-25T15:16:58.853740+00:00", "payload": {"text": "Cheerio, come back soon.", "turn": 5, "mode": "voice"}}

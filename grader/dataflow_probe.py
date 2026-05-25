@@ -24,6 +24,7 @@ class ProbeResult:
     detail: str
 
 
+# Ayman ValidateMe: Validate the fabrications
 FABRICATIONS = [
     ("£9999", "obvious-price plant — not in any venue+catering combo"),
     ("Castle Royal Grand Inn", "non-existent venue name"),

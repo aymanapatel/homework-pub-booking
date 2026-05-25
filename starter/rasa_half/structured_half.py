@@ -18,6 +18,7 @@ import asyncio
 import hashlib
 import json
 import os
+import shutil
 import subprocess
 import threading
 import time
@@ -35,6 +36,13 @@ from starter.rasa_half.validator import normalise_booking_payload
 
 RASA_REST_WEBHOOK_DEFAULT = "http://localhost:5005/webhooks/rest/webhook"
 _SOLUTION_EX6 = Path(__file__).resolve().parent
+_VENUE_CAPACITY = {
+    "haymarket_tap": 8,
+    "royal_oak": 16,
+    "bennets_bar": 24,
+    "cafe_royal": 40,
+    "sheep_heid": 0,
+}
 
 
 class RasaStructuredHalf(StructuredHalf):
@@ -73,8 +81,24 @@ class RasaStructuredHalf(StructuredHalf):
         }
 
     async def run(self, session: Session, input_payload: dict) -> HalfResult:
+        session.append_trace_event(
+            {
+                "event_type": "structured.called",
+                "actor": self.name,
+                "payload": {
+                    "has_data": isinstance(input_payload, dict) and "data" in input_payload
+                },
+            }
+        )
         data = input_payload.get("data") if isinstance(input_payload, dict) else None
         if not data:
+            session.append_trace_event(
+                {
+                    "event_type": "structured.escalated",
+                    "actor": self.name,
+                    "payload": {"reason": "missing_data"},
+                }
+            )
             return HalfResult(
                 success=False,
                 output={"error": "input_payload missing 'data' dict"},
@@ -85,6 +109,13 @@ class RasaStructuredHalf(StructuredHalf):
         try:
             rasa_msg = normalise_booking_payload(data)
         except Exception as e:  # noqa: BLE001
+            session.append_trace_event(
+                {
+                    "event_type": "structured.escalated",
+                    "actor": self.name,
+                    "payload": {"reason": "normalisation_failed", "error": str(e)},
+                }
+            )
             return HalfResult(
                 success=False,
                 output={"error": str(e), "raw": data},
@@ -93,6 +124,13 @@ class RasaStructuredHalf(StructuredHalf):
             )
 
         booking = rasa_msg["metadata"]["booking"]
+        session.append_trace_event(
+            {
+                "event_type": "structured.normalised",
+                "actor": self.name,
+                "payload": {"booking": booking},
+            }
+        )
         body = json.dumps(
             {
                 "sender": rasa_msg["sender"],
@@ -113,6 +151,13 @@ class RasaStructuredHalf(StructuredHalf):
                 lambda: urllib_request.urlopen(req, timeout=self.request_timeout_s).read(),
             )
         except HTTPError as e:
+            session.append_trace_event(
+                {
+                    "event_type": "structured.escalated",
+                    "actor": self.name,
+                    "payload": {"reason": "rasa_http_error", "status": e.code},
+                }
+            )
             return HalfResult(
                 success=False,
                 output={
@@ -124,6 +169,13 @@ class RasaStructuredHalf(StructuredHalf):
                 next_action="escalate",
             )
         except URLError as e:
+            session.append_trace_event(
+                {
+                    "event_type": "structured.escalated",
+                    "actor": self.name,
+                    "payload": {"reason": "rasa_unreachable", "error": str(e)},
+                }
+            )
             return HalfResult(
                 success=False,
                 output={
@@ -135,6 +187,13 @@ class RasaStructuredHalf(StructuredHalf):
                 next_action="escalate",
             )
         except TimeoutError:
+            session.append_trace_event(
+                {
+                    "event_type": "structured.escalated",
+                    "actor": self.name,
+                    "payload": {"reason": "rasa_timeout"},
+                }
+            )
             return HalfResult(
                 success=False,
                 output={"error": "timeout", "error_code": "SA_EXT_TIMEOUT"},
@@ -145,6 +204,13 @@ class RasaStructuredHalf(StructuredHalf):
         try:
             messages = json.loads(raw_response)
         except json.JSONDecodeError:
+            session.append_trace_event(
+                {
+                    "event_type": "structured.escalated",
+                    "actor": self.name,
+                    "payload": {"reason": "non_json_response"},
+                }
+            )
             return HalfResult(
                 success=False,
                 output={
@@ -177,6 +243,16 @@ class RasaStructuredHalf(StructuredHalf):
                 rejection_reason = text or "rejected by rasa"
 
         if confirmed and not rejected:
+            session.append_trace_event(
+                {
+                    "event_type": "structured.completed",
+                    "actor": self.name,
+                    "payload": {
+                        "booking_reference": booking_reference,
+                        "venue_id": booking.get("venue_id"),
+                    },
+                }
+            )
             return HalfResult(
                 success=True,
                 output={
@@ -190,6 +266,13 @@ class RasaStructuredHalf(StructuredHalf):
             )
 
         if rejected:
+            session.append_trace_event(
+                {
+                    "event_type": "structured.escalated",
+                    "actor": self.name,
+                    "payload": {"reason": rejection_reason or "rejected"},
+                }
+            )
             return HalfResult(
                 success=False,
                 output={
@@ -202,6 +285,13 @@ class RasaStructuredHalf(StructuredHalf):
                 next_action="escalate",
             )
 
+        session.append_trace_event(
+            {
+                "event_type": "structured.escalated",
+                "actor": self.name,
+                "payload": {"reason": "unexpected_rasa_output"},
+            }
+        )
         return HalfResult(
             success=False,
             output={
@@ -248,15 +338,15 @@ class RasaHostLifecycle:
         log_dir: Path | None = None,
     ) -> None:
         # Default to the homework's rasa_project/ at the repo root
-        self.rasa_project_dir = rasa_project_dir or (
-            _SOLUTION_EX6.parent.parent.parent / "rasa_project"
-        )
+        self.rasa_project_dir = rasa_project_dir or (_SOLUTION_EX6.parent.parent / "rasa_project")
         self.rasa_port = rasa_port
         self.action_port = action_port
         self.startup_timeout_s = startup_timeout_s
         self.log_dir = log_dir
         self._rasa_proc: subprocess.Popen | None = None
         self._action_proc: subprocess.Popen | None = None
+        self._mock_server: ThreadingHTTPServer | None = None
+        self._mock_thread: threading.Thread | None = None
 
     def _log(self, msg: str) -> None:
         print(msg, flush=True)
@@ -270,11 +360,10 @@ class RasaHostLifecycle:
 
     async def __aenter__(self) -> str:
         if not os.environ.get("RASA_PRO_LICENSE"):
-            raise RuntimeError(
-                "RASA_PRO_LICENSE is not set. Rasa Pro refuses to start "
-                "without a license. Set it in your .env, or use the mock "
-                "server (spawn_mock_rasa) as a fallback."
-            )
+            return self._start_mock("RASA_PRO_LICENSE is not set")
+
+        if shutil.which("rasa") is None:
+            return self._start_mock("rasa CLI not found in PATH")
 
         if not self.rasa_project_dir.exists():
             raise RuntimeError(
@@ -353,6 +442,15 @@ class RasaHostLifecycle:
         raise TimeoutError(f"Rasa not healthy after {self.startup_timeout_s}s")
 
     async def __aexit__(self, exc_type, exc, tb) -> None:
+        if self._mock_server is not None:
+            self._log("▶ tearing down mock Rasa server")
+            self._mock_server.shutdown()
+            if self._mock_thread is not None:
+                self._mock_thread.join(timeout=5)
+            self._mock_server = None
+            self._mock_thread = None
+            return
+
         self._log("▶ tearing down Rasa + action server")
         for name, proc in (("rasa", self._rasa_proc), ("actions", self._action_proc)):
             if proc is None:
@@ -415,6 +513,11 @@ class RasaHostLifecycle:
             proc = subprocess.run(cmd, cwd=str(cwd), timeout=timeout)
             return proc.returncode
 
+    def _start_mock(self, reason: str) -> str:
+        self._log(f"⚠ {reason}; falling back to stdlib mock Rasa on :{self.rasa_port}")
+        self._mock_server, self._mock_thread, mock_url = spawn_mock_rasa(port=self.rasa_port)
+        return mock_url
+
 
 # ─────────────────────────────────────────────────────────────────────
 # Stdlib mock server (used when no Rasa license)
@@ -440,6 +543,8 @@ class _MockRasaHandler(BaseHTTPRequestHandler):
         booking = payload.get("metadata", {}).get("booking", {})
         party = booking.get("party_size")
         deposit = booking.get("deposit_gbp", 0)
+        venue_id = booking.get("venue_id")
+        venue_cap = _VENUE_CAPACITY.get(str(venue_id), 8)
 
         if not party:
             response = [
@@ -448,7 +553,7 @@ class _MockRasaHandler(BaseHTTPRequestHandler):
                     "custom": {"action": "rejected", "reason": "missing_party_size"},
                 }
             ]
-        elif party > 8:
+        elif party > venue_cap:
             response = [
                 {
                     "text": "Sorry, we can't accept this booking. Reason: party_too_large",

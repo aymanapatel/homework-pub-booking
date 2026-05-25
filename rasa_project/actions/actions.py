@@ -28,6 +28,13 @@ from rasa_sdk.executor import CollectingDispatcher
 
 MAX_PARTY_SIZE_FOR_AUTO_BOOKING = 8
 MAX_DEPOSIT_FOR_AUTO_BOOKING_GBP = 300
+VENUE_CAPACITY = {
+    "haymarket_tap": 8,
+    "royal_oak": 16,
+    "bennets_bar": 24,
+    "cafe_royal": 40,
+    "sheep_heid": 0,
+}
 
 
 def _read_booking(tracker: Tracker) -> dict[str, Any]:
@@ -115,8 +122,10 @@ class ActionValidateBooking(Action):
         except (TypeError, ValueError):
             return slot_events + [SlotSet("validation_error", "invalid_deposit")]
 
-        # Rule checks
-        if party_int > MAX_PARTY_SIZE_FOR_AUTO_BOOKING:
+        # Rule checks. Ex7 validates against the proposed venue's capacity; if
+        # the venue is unknown, fall back to Ex6's global auto-booking cap.
+        venue_cap = VENUE_CAPACITY.get(str(venue_id), MAX_PARTY_SIZE_FOR_AUTO_BOOKING)
+        if party_int > venue_cap:
             return slot_events + [SlotSet("validation_error", "party_too_large")]
 
         if deposit_int > MAX_DEPOSIT_FOR_AUTO_BOOKING_GBP:

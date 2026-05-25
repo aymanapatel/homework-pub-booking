@@ -39,22 +39,69 @@ async def run_scenario(real: bool, auto: bool) -> int:
     with example_sessions_dir("ex6-rasa-half", persist=real) as sessions_root:
         session = create_session(
             scenario="ex6-rasa",
-            task="Confirm a booking through the Rasa structured half.",
+            task="Confirm and resume bookings through the Rasa structured half.",
             sessions_dir=sessions_root,
         )
         print(f"📂 Session {session.session_id}")
         print(f"   dir: {session.directory}")
 
-        sample_booking = {
-            "data": {
-                "action": "confirm_booking",
-                "venue_id": "Haymarket Tap",
-                "date": "25th April 2026",
-                "time": "7:30pm",
-                "party_size": "6",
-                "deposit": "£200",
-            }
-        }
+        rubric_cases = [
+            (
+                "confirm_booking valid",
+                True,
+                {
+                    "action": "confirm_booking",
+                    "venue_id": "Haymarket Tap",
+                    "date": "25th April 2026",
+                    "time": "7:30pm",
+                    "party_size": "6",
+                    "deposit": "£200",
+                },
+            ),
+            (
+                "resume_from_loop valid",
+                True,
+                {
+                    "action": "resume_from_loop",
+                    "venue_id": "Haymarket Tap",
+                    "date": "25th April 2026",
+                    "time": "7:30pm",
+                    "party_size": "6",
+                    "deposit": "£200",
+                },
+            ),
+            (
+                "reject party over cap",
+                False,
+                {
+                    "action": "confirm_booking",
+                    "venue_id": "Haymarket Tap",
+                    "date": "25th April 2026",
+                    "time": "8:00pm",
+                    "party_size": "12",
+                    "deposit": "£200",
+                },
+            ),
+            (
+                "reject deposit over cap",
+                False,
+                {
+                    "action": "confirm_booking",
+                    "venue_id": "Haymarket Tap",
+                    "date": "25th April 2026",
+                    "time": "8:30pm",
+                    "party_size": "6",
+                    "deposit": "£500",
+                },
+            ),
+        ]
+
+        async def run_rubric_cases(half: RasaStructuredHalf) -> list[tuple[str, bool, object]]:
+            outcomes = []
+            for label, expected_success, data in rubric_cases:
+                result = await half.run(session, {"data": data})
+                outcomes.append((label, expected_success, result))
+            return outcomes
 
         if real and auto:
             # Tier 3 — auto-spawn.
@@ -68,7 +115,7 @@ async def run_scenario(real: bool, auto: bool) -> int:
             async with RasaHostLifecycle(log_dir=log_dir) as rasa_url:
                 print(f"   Rasa URL: {rasa_url}")
                 half = RasaStructuredHalf(rasa_url=rasa_url, request_timeout_s=30.0)
-                result = await half.run(session, sample_booking)
+                outcomes = await run_rubric_cases(half)
 
         elif real:
             # Tier 2 — assume Rasa is already running.
@@ -80,7 +127,7 @@ async def run_scenario(real: bool, auto: bool) -> int:
             rasa_url = "http://localhost:5005/webhooks/rest/webhook"
             print(f"   Rasa URL: {rasa_url}")
             half = RasaStructuredHalf(rasa_url=rasa_url, request_timeout_s=30.0)
-            result = await half.run(session, sample_booking)
+            outcomes = await run_rubric_cases(half)
 
         else:
             # Tier 1 — mock.
@@ -89,19 +136,25 @@ async def run_scenario(real: bool, auto: bool) -> int:
             try:
                 print(f"   Mock URL: {mock_url}")
                 half = RasaStructuredHalf(rasa_url=mock_url)
-                result = await half.run(session, sample_booking)
+                outcomes = await run_rubric_cases(half)
             finally:
                 server.shutdown()
 
-        print(f"\nStructured half outcome: {result.next_action}")
-        print(f"  summary: {result.summary}")
-        print(f"  output:  {result.output}")
+        print("\nStructured half outcomes:")
+        all_expected = True
+        for label, expected_success, result in outcomes:
+            passed = result.success is expected_success
+            all_expected = all_expected and passed
+            marker = "✓" if passed else "✗"
+            print(f"  {marker} {label}: {result.next_action}")
+            print(f"    summary: {result.summary}")
+            print(f"    output:  {result.output}")
 
         if real:
             print(f"\n📂 Session artifacts: {session.directory}")
             print(f"📜 Narrate this run:   make narrate SESSION={session.session_id}")
 
-        return 0 if result.success else 1
+        return 0 if all_expected else 1
 
 
 def main() -> None:

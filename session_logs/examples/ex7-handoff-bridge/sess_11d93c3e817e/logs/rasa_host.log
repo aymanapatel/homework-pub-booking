@@ -1,0 +1,2 @@
+⚠ rasa CLI not found in PATH; falling back to stdlib mock Rasa on :5005
+▶ tearing down mock Rasa server

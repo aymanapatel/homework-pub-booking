@@ -1,0 +1,75 @@
+{
+  "session_id": "sess_11d93c3e817e",
+  "version": 1,
+  "created_at": "2026-05-25T14:52:40.184009+00:00",
+  "updated_at": "2026-05-25T14:57:05.133446+00:00",
+  "scenario": "ex7-handoff-bridge",
+  "state": "completed",
+  "user_id": null,
+  "current_half": "loop",
+  "planner": {
+    "subgoals": [
+      {
+        "id": "sg_1",
+        "description": "Check the maximum allowed party size for the booking system",
+        "success_criterion": "Maximum party size value is retrieved from the system",
+        "estimated_tool_calls": 1,
+        "depends_on": [],
+        "assigned_half": "loop",
+        "status": "pending"
+      },
+      {
+        "id": "sg_2",
+        "description": "Adjust the party size to be within the maximum allowed limit",
+        "success_criterion": "New party size is confirmed to be less than or equal to the maximum size",
+        "estimated_tool_calls": 1,
+        "depends_on": [
+          "sg_1"
+        ],
+        "assigned_half": "loop",
+        "status": "pending"
+      },
+      {
+        "id": "sg_3",
+        "description": "Submit the revised booking proposal with the adjusted party size",
+        "success_criterion": "System accepts the new proposal without rejection",
+        "estimated_tool_calls": 1,
+        "depends_on": [
+          "sg_2"
+        ],
+        "assigned_half": "structured",
+        "status": "pending"
+      }
+    ]
+  },
+  "executor": {},
+  "structured": {},
+  "memory": {},
+  "handoff_history": [],
+  "bare_mode": false,
+  "config_overrides": {},
+  "result": {
+    "committed": true,
+    "booking": {
+      "action": "confirm_booking",
+      "venue_id": "royal_oak",
+      "date": "2026-04-25",
+      "time": "19:30",
+      "party_size": 12,
+      "deposit_gbp": 0,
+      "duration_hours": 3,
+      "catering_tier": "bar_snacks"
+    },
+    "booking_reference": "BK-9B8DBC29",
+    "rasa_response": [
+      {
+        "text": "Booking confirmed. Reference: BK-9B8DBC29.",
+        "custom": {
+          "action": "committed",
+          "booking_reference": "BK-9B8DBC29"
+        }
+      }
+    ]
+  },
+  "resumed_from": null
+}
