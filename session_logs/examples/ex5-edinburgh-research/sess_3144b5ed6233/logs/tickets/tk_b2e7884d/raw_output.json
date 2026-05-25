@@ -1,0 +1,33 @@
+[
+  {
+    "id": "sg_1",
+    "description": "Research and compile a list of potential venues in Edinburgh",
+    "success_criterion": "List of 3-5 venues with names and locations",
+    "estimated_tool_calls": 1,
+    "depends_on": [],
+    "assigned_half": "loop",
+    "status": "pending"
+  },
+  {
+    "id": "sg_2",
+    "description": "Gather detailed information (capacity, pricing, amenities) for each venue on the list",
+    "success_criterion": "Detailed data collected for all venues in the list",
+    "estimated_tool_calls": 3,
+    "depends_on": [
+      "sg_1"
+    ],
+    "assigned_half": "loop",
+    "status": "pending"
+  },
+  {
+    "id": "sg_3",
+    "description": "Draft a professional flyer using the gathered venue details",
+    "success_criterion": "Flyer text completed with all necessary information",
+    "estimated_tool_calls": 1,
+    "depends_on": [
+      "sg_2"
+    ],
+    "assigned_half": "loop",
+    "status": "pending"
+  }
+]

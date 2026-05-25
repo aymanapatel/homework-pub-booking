@@ -1,1 +1,0 @@
-Executor completed subgoal sg_2 in 5 turn(s). Made 5 tool call(s): generate_flyer, get_weather, calculate_cost, generate_flyer, complete_task.

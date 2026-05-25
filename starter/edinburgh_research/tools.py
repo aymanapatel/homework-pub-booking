@@ -495,10 +495,24 @@ def build_tool_registry(session: Session) -> ToolRegistry:
     reg.unregister("complete_task")
     reg.unregister("handoff_to_structured")
 
+    def _successful_call(tool_name: str) -> bool:
+        return any(rec.tool_name == tool_name and "error" not in rec.output for rec in _TOOL_CALL_LOG)
+
+    def _successful_generate_flyer() -> bool:
+        flyer_path = session.workspace_dir / "flyer.html"
+        return any(
+            rec.tool_name == "generate_flyer"
+            and rec.output.get("path") == "workspace/flyer.html"
+            and flyer_path.exists()
+            for rec in _TOOL_CALL_LOG
+        )
+
     def _ex5_required_next_tools() -> list[str]:
-        called = {rec.tool_name for rec in _TOOL_CALL_LOG}
-        required = ["venue_search", "get_weather", "calculate_cost", "generate_flyer"]
-        return [tool for tool in required if tool not in called]
+        required = ["venue_search", "get_weather", "calculate_cost"]
+        missing = [tool for tool in required if not _successful_call(tool)]
+        if not _successful_generate_flyer():
+            missing.append("generate_flyer")
+        return missing
 
     def _venue_search_adapter(
         near: str,
@@ -555,15 +569,17 @@ def build_tool_registry(session: Session) -> ToolRegistry:
             and flyer_path.exists()
             for rec in _TOOL_CALL_LOG
         )
-        if not flyer_written_by_tool:
+        result_mentions_flyer = isinstance(result, dict) and result.get("flyer") == "workspace/flyer.html"
+        if not flyer_written_by_tool or not result_mentions_flyer:
             err = ToolError(
                 code="SA_TOOL_INVALID_INPUT",
                 message=(
                     "complete_task is blocked until generate_flyer has written "
-                    "workspace/flyer.html. Next call get_weather, calculate_cost, "
-                    "then generate_flyer with venue_name, venue_address, date, time, "
-                    "party_size, condition, temperature_c, total_gbp, and "
-                    "deposit_required_gbp."
+                    "workspace/flyer.html and the complete_task result includes "
+                    "{'flyer': 'workspace/flyer.html'}. Next call any missing "
+                    "source tools, then generate_flyer with venue_name, "
+                    "venue_address, date, time, party_size, condition, "
+                    "temperature_c, total_gbp, and deposit_required_gbp."
                 ),
                 context={
                     "required_before_complete": [
@@ -571,6 +587,7 @@ def build_tool_registry(session: Session) -> ToolRegistry:
                         "calculate_cost",
                         "generate_flyer",
                     ],
+                    "required_result_field": {"flyer": "workspace/flyer.html"},
                     "required_next_tools": _ex5_required_next_tools(),
                     "flyer_path": "workspace/flyer.html",
                 },
@@ -657,7 +674,13 @@ def build_tool_registry(session: Session) -> ToolRegistry:
     reg.register(
         _RegisteredTool(
             name="calculate_cost",
-            description="Compute total cost and deposit for a booking.",
+            description=(
+                "Compute total cost and deposit for a booking. For Ex5 use "
+                "venue_id='haymarket_tap', party_size=6, duration_hours=3, "
+                "catering_tier='bar_snacks'. After this succeeds, call "
+                "get_weather if it has not already succeeded, then call "
+                "generate_flyer as a real function/tool call."
+            ),
             fn=calculate_cost,
             parameters_schema={
                 "type": "object",
@@ -691,16 +714,77 @@ def build_tool_registry(session: Session) -> ToolRegistry:
 
     # generate_flyer — parallel_safe=False because it writes a file
     def _flyer_adapter(event_details: dict) -> ToolResult:
+        if session.state.scenario == "edinburgh-research":
+            missing = [
+                tool
+                for tool in ["venue_search", "get_weather", "calculate_cost"]
+                if not _successful_call(tool)
+            ]
+            if missing:
+                err = ToolError(
+                    code="SA_TOOL_INVALID_INPUT",
+                    message=(
+                        "cannot generate Ex5 flyer until these source tools have "
+                        f"succeeded: {missing}. Call get_weather('edinburgh', "
+                        "'2026-04-25') and calculate_cost('haymarket_tap', 6, "
+                        "3, 'bar_snacks') before generate_flyer."
+                    ),
+                    context={"required_next_tools": _ex5_required_next_tools()},
+                )
+                return ToolResult(
+                    success=False,
+                    output={
+                        "blocked": True,
+                        "reason": err.message,
+                        "required_next_tools": _ex5_required_next_tools(),
+                    },
+                    summary=str(err),
+                    error=err,
+                )
         return generate_flyer(session, event_details)
 
     reg.register(
         _RegisteredTool(
             name="generate_flyer",
-            description="Write an HTML flyer for the event to workspace/flyer.html.",
+            description=(
+                "Write the Ex5 HTML flyer to workspace/flyer.html. This must be "
+                "called as an actual function/tool call; do not print a "
+                "<tool_call> block or describe the call in final text. For Ex5 "
+                "use venue_name='Haymarket Tap', venue_address='12 Dalry Rd, "
+                "Edinburgh EH11 2BG', date='2026-04-25', time='19:30', "
+                "party_size=6, condition='cloudy', temperature_c=12, "
+                "total_gbp=540, deposit_required_gbp=0."
+            ),
             fn=_flyer_adapter,
             parameters_schema={
                 "type": "object",
-                "properties": {"event_details": {"type": "object"}},
+                "properties": {
+                    "event_details": {
+                        "type": "object",
+                        "properties": {
+                            "venue_name": {"type": "string"},
+                            "venue_address": {"type": "string"},
+                            "date": {"type": "string"},
+                            "time": {"type": "string"},
+                            "party_size": {"type": "integer"},
+                            "condition": {"type": "string"},
+                            "temperature_c": {"type": "integer"},
+                            "total_gbp": {"type": "integer"},
+                            "deposit_required_gbp": {"type": "integer"},
+                        },
+                        "required": [
+                            "venue_name",
+                            "venue_address",
+                            "date",
+                            "time",
+                            "party_size",
+                            "condition",
+                            "temperature_c",
+                            "total_gbp",
+                            "deposit_required_gbp",
+                        ],
+                    }
+                },
                 "required": ["event_details"],
             },
             returns_schema={"type": "object"},
@@ -711,8 +795,14 @@ def build_tool_registry(session: Session) -> ToolRegistry:
                     "input": {
                         "event_details": {
                             "venue_name": "Haymarket Tap",
+                            "venue_address": "12 Dalry Rd, Edinburgh EH11 2BG",
                             "date": "2026-04-25",
+                            "time": "19:30",
                             "party_size": 6,
+                            "condition": "cloudy",
+                            "temperature_c": 12,
+                            "total_gbp": 540,
+                            "deposit_required_gbp": 0,
                         }
                     },
                     "output": {"path": "workspace/flyer.html"},
@@ -760,7 +850,9 @@ def build_tool_registry(session: Session) -> ToolRegistry:
             name="complete_task",
             description=(
                 "Mark the session complete. For Ex5 this is allowed only after "
-                "generate_flyer has written workspace/flyer.html."
+                "generate_flyer has written workspace/flyer.html. If the flyer "
+                "does not exist, do not answer in text; call generate_flyer as "
+                "a real function/tool call first."
             ),
             fn=_guarded_complete_task,
             parameters_schema={

@@ -1,1 +1,0 @@
-Executor did not complete subgoal sg_2 in 8 turn(s). Made 8 tool call(s): list_files, venue_search, get_weather, calculate_cost, calculate_cost, generate_flyer, calculate_cost, generate_flyer.

@@ -149,7 +149,7 @@ minimum.
    - Second round: `royal_oak` (16 seats) — structured half approves.
    - Session marks complete with the final booking.
 
-### How you're graded
+### How you're gradedor
 
 | Aspect | Weight |
 |---|---|

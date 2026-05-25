@@ -20,6 +20,7 @@ from __future__ import annotations
 import asyncio
 import os
 import sys
+import warnings
 import wave
 
 from sovereign_agent.session.directory import Session
@@ -33,6 +34,8 @@ CHANNELS = 1
 SAMPLE_WIDTH = 2  # 16-bit PCM
 MAX_UTTERANCE_S = 15.0  # cap per-turn recording
 SILENCE_TIMEOUT_S = 2.0  # consecutive silence to end an utterance
+INITIAL_SPEECH_TIMEOUT_S = 5.0  # how long to wait for speech after prompt
+MAX_EMPTY_PROMPTS = 3  # consecutive empty listens before giving up
 
 
 # ---------------------------------------------------------------------------
@@ -126,10 +129,13 @@ async def run_voice_mode(session: Session, persona: ManagerPersona, max_turns: i
 
     print(f"🎙️  Voice mode. Session: {session.session_id}")
     print(f"    Speak when prompted. Silence for {SILENCE_TIMEOUT_S}s ends a turn.")
+    print(f"    Waiting up to {INITIAL_SPEECH_TIMEOUT_S}s for speech before reprompting.")
     print(f"    Max utterance: {MAX_UTTERANCE_S}s. Say 'goodbye' to end.")
     print("-" * 60)
 
-    for turn_idx in range(max_turns):
+    turn_idx = 0
+    empty_prompts = 0
+    while turn_idx < max_turns:
         print(f"\n[turn {turn_idx + 1}] 🎤 listening...")
 
         # ── capture audio ──────────────────────────────────────────
@@ -145,8 +151,12 @@ async def run_voice_mode(session: Session, persona: ManagerPersona, max_turns: i
             return
 
         if not audio_bytes:
-            print("   (silence detected; ending conversation)")
-            break
+            empty_prompts += 1
+            if empty_prompts >= MAX_EMPTY_PROMPTS:
+                print("   (silence detected too many times; ending conversation)")
+                break
+            print("   (silence detected; try again or say 'goodbye' to end)")
+            continue
 
         # ── transcribe via Speechmatics ────────────────────────────
         try:
@@ -170,8 +180,14 @@ async def run_voice_mode(session: Session, persona: ManagerPersona, max_turns: i
 
         user_text = user_text.strip()
         if not user_text:
-            print("   (no transcript; ending conversation)")
-            break
+            empty_prompts += 1
+            if empty_prompts >= MAX_EMPTY_PROMPTS:
+                print("   (no transcript after repeated attempts; ending conversation)")
+                break
+            print("   (no transcript; try again or say 'goodbye' to end)")
+            continue
+
+        empty_prompts = 0
 
         print(f"   you> {user_text}")
         session.append_trace_event(
@@ -205,6 +221,8 @@ async def run_voice_mode(session: Session, persona: ManagerPersona, max_turns: i
                 await _speak_rime(manager_text, rime_key, sd)
             except Exception as e:  # noqa: BLE001
                 print(f"   ⚠ TTS playback failed: {e} (continuing)", file=sys.stderr)
+
+        turn_idx += 1
 
     print("-" * 60)
     print(f"Conversation ended. Trace: {session.trace_path}")
@@ -261,8 +279,8 @@ def _record_until_silence(sd, session: Session, turn: int) -> bytes:
                 break
             if total_ms >= MAX_UTTERANCE_S * 1000:
                 break
-            # Grace: if no speech in first 3s, exit with empty
-            if not speech_started and total_ms >= 3000:
+            # Grace: if no speech shortly after the prompt, let the caller reprompt.
+            if not speech_started and total_ms >= INITIAL_SPEECH_TIMEOUT_S * 1000:
                 return b""
 
     audio_bytes = b"".join(captured)
@@ -366,7 +384,9 @@ async def _speak_rime(text: str, api_key: str, sd) -> None:
     try:
         from io import BytesIO
 
-        from pydub import AudioSegment  # type: ignore[import-not-found]
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", category=SyntaxWarning, module=r"pydub\..*")
+            from pydub import AudioSegment  # type: ignore[import-not-found]
     except ImportError:
         print(
             "   (pydub not installed; can't decode mp3 for playback — "

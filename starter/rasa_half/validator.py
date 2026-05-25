@@ -56,6 +56,11 @@ def normalise_booking_payload(raw: dict) -> dict:
     if not isinstance(raw, dict):
         raise ValidationFailed(f"expected dict, got {type(raw).__name__}")
 
+    action = str(raw.get("action") or "confirm_booking").strip()
+    allowed_actions = {"confirm_booking", "resume_from_loop"}
+    if action not in allowed_actions:
+        action = "confirm_booking"
+
     venue_id_raw = raw.get("venue_id")
     if not venue_id_raw:
         raise ValidationFailed("missing venue_id")
@@ -91,9 +96,10 @@ def normalise_booking_payload(raw: dict) -> dict:
 
     return {
         "sender": f"homework-{stable_suffix}",
-        "message": "/confirm_booking",
+        "message": f"/{action}",
         "metadata": {
             "booking": {
+                "action": action,
                 "venue_id": venue_id,
                 "date": date_iso,
                 "time": time_24h,
