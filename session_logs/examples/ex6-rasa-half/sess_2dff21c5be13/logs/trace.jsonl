@@ -1,0 +1,12 @@
+{"event_type": "structured.called", "actor": "rasa", "payload": {"has_data": true}}
+{"event_type": "structured.normalised", "actor": "rasa", "payload": {"booking": {"action": "confirm_booking", "venue_id": "haymarket_tap", "date": "2026-04-25", "time": "19:30", "party_size": 6, "deposit_gbp": 200, "duration_hours": 3, "catering_tier": "bar_snacks"}}}
+{"event_type": "structured.completed", "actor": "rasa", "payload": {"booking_reference": "BK-7D401E9E", "venue_id": "haymarket_tap"}}
+{"event_type": "structured.called", "actor": "rasa", "payload": {"has_data": true}}
+{"event_type": "structured.normalised", "actor": "rasa", "payload": {"booking": {"action": "resume_from_loop", "venue_id": "haymarket_tap", "date": "2026-04-25", "time": "19:30", "party_size": 6, "deposit_gbp": 200, "duration_hours": 3, "catering_tier": "bar_snacks"}}}
+{"event_type": "structured.completed", "actor": "rasa", "payload": {"booking_reference": "BK-7D401E9E", "venue_id": "haymarket_tap"}}
+{"event_type": "structured.called", "actor": "rasa", "payload": {"has_data": true}}
+{"event_type": "structured.normalised", "actor": "rasa", "payload": {"booking": {"action": "confirm_booking", "venue_id": "haymarket_tap", "date": "2026-04-25", "time": "20:00", "party_size": 12, "deposit_gbp": 200, "duration_hours": 3, "catering_tier": "bar_snacks"}}}
+{"event_type": "structured.escalated", "actor": "rasa", "payload": {"reason": "sorry, we can't accept this booking. reason: party_too_large"}}
+{"event_type": "structured.called", "actor": "rasa", "payload": {"has_data": true}}
+{"event_type": "structured.normalised", "actor": "rasa", "payload": {"booking": {"action": "confirm_booking", "venue_id": "haymarket_tap", "date": "2026-04-25", "time": "20:30", "party_size": 6, "deposit_gbp": 500, "duration_hours": 3, "catering_tier": "bar_snacks"}}}
+{"event_type": "structured.escalated", "actor": "rasa", "payload": {"reason": "sorry, we can't accept this booking. reason: deposit_too_high"}}

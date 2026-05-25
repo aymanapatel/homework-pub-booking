@@ -92,7 +92,9 @@ def normalise_booking_payload(raw: dict) -> dict:
     if catering not in ("drinks_only", "bar_snacks", "sit_down_meal", "three_course_meal"):
         catering = "bar_snacks"
 
-    stable_suffix = hashlib.sha1(f"{venue_id}-{date_iso}-{time_24h}".encode()).hexdigest()[:8]
+    stable_suffix = hashlib.sha1(
+        f"{action}-{venue_id}-{date_iso}-{time_24h}-{party}-{deposit}".encode()
+    ).hexdigest()[:8]
 
     return {
         "sender": f"homework-{stable_suffix}",
