@@ -100,15 +100,22 @@ async def run_voice_mode(session: Session, persona: ManagerPersona, max_turns: i
         return
 
     try:
-        import sounddevice as sd  # type: ignore[import-not-found]
-        import speechmatics  # type: ignore[import-not-found]  # noqa: F401
-        from speechmatics.client import WebsocketClient  # type: ignore[import-not-found]
-        from speechmatics.models import (  # type: ignore[import-not-found]
-            AudioSettings,
-            ConnectionSettings,
-            ServerMessageType,
-            TranscriptionConfig,
-        )
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore",
+                message=r"pkg_resources is deprecated as an API\..*",
+                category=UserWarning,
+                module=r"speechmatics\.helpers",
+            )
+            import sounddevice as sd  # type: ignore[import-not-found]
+            import speechmatics  # type: ignore[import-not-found]  # noqa: F401
+            from speechmatics.client import WebsocketClient  # type: ignore[import-not-found]
+            from speechmatics.models import (  # type: ignore[import-not-found]
+                AudioSettings,
+                ConnectionSettings,
+                ServerMessageType,
+                TranscriptionConfig,
+            )
     except ImportError as e:
         print(
             f"⚠  Missing voice dep: {e.name}. Run 'make setup' with voice extra:\n"

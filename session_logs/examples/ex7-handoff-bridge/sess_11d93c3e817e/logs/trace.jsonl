@@ -1,0 +1,19 @@
+{"event_type": "bridge.round_start", "actor": "bridge", "payload": {"round": 1, "half": "loop"}}
+{"event_type": "planner.called", "actor": "default", "timestamp": "2026-05-25T14:52:40.685370+00:00", "payload": {"task_preview": "book for party of 12 in Haymarket"}}
+{"event_type": "planner.produced_subgoals", "actor": "default", "timestamp": "2026-05-25T14:53:06.260261+00:00", "payload": {"num_subgoals": 3}}
+{"event_type": "executor.tool_called", "actor": "default", "ticket_id": null, "timestamp": "2026-05-25T14:53:51.366775+00:00", "payload": {"tool": "venue_search", "arguments": {"near": "Haymarket", "party_size": 12}, "success": true, "summary": "venue_search(Haymarket, party=12): 1 result(s)"}}
+{"event_type": "session.state_changed", "actor": "bridge", "payload": {"from": "loop", "to": "structured", "round": 1}}
+{"event_type": "structured.called", "actor": "rasa", "payload": {"has_data": true}}
+{"event_type": "structured.normalised", "actor": "rasa", "payload": {"booking": {"action": "confirm_booking", "venue_id": "haymarket_tap", "date": "2026-04-25", "time": "19:30", "party_size": 12, "deposit_gbp": 0, "duration_hours": 3, "catering_tier": "bar_snacks"}}}
+{"event_type": "structured.escalated", "actor": "rasa", "payload": {"reason": "sorry, we can't accept this booking. reason: party_too_large"}}
+{"event_type": "session.state_changed", "actor": "bridge", "payload": {"from": "structured", "to": "loop", "round": 1, "rejection_reason": "sorry, we can't accept this booking. reason: party_too_large"}}
+{"event_type": "bridge.round_start", "actor": "bridge", "payload": {"round": 2, "half": "loop"}}
+{"event_type": "planner.called", "actor": "default", "timestamp": "2026-05-25T14:54:04.282416+00:00", "payload": {"task_preview": "The structured half rejected the previous proposal. Reason: sorry, we can't accept this booking. reason: party_too_large. Produce an alternative."}}
+{"event_type": "planner.produced_subgoals", "actor": "default", "timestamp": "2026-05-25T14:54:22.188086+00:00", "payload": {"num_subgoals": 3}}
+{"event_type": "executor.tool_called", "actor": "default", "ticket_id": null, "timestamp": "2026-05-25T14:54:51.781857+00:00", "payload": {"tool": "venue_search", "arguments": {"near": "Haymarket", "party_size": 1000, "budget_max_gbp": 1000000}, "success": true, "summary": "venue_search(Old Town, party=1000): 1 result(s)"}}
+{"event_type": "executor.tool_called", "actor": "default", "ticket_id": null, "timestamp": "2026-05-25T14:56:49.226304+00:00", "payload": {"tool": "venue_search", "arguments": {"near": "Haymarket", "party_size": 6, "budget_max_gbp": 800}, "success": true, "summary": "venue_search(Old Town, party=6): 1 result(s)"}}
+{"event_type": "session.state_changed", "actor": "bridge", "payload": {"from": "loop", "to": "structured", "round": 2}}
+{"event_type": "structured.called", "actor": "rasa", "payload": {"has_data": true}}
+{"event_type": "structured.normalised", "actor": "rasa", "payload": {"booking": {"action": "confirm_booking", "venue_id": "royal_oak", "date": "2026-04-25", "time": "19:30", "party_size": 12, "deposit_gbp": 0, "duration_hours": 3, "catering_tier": "bar_snacks"}}}
+{"event_type": "structured.completed", "actor": "rasa", "payload": {"booking_reference": "BK-9B8DBC29", "venue_id": "royal_oak"}}
+{"event_type": "session.state_changed", "actor": "bridge", "payload": {"from": "structured", "to": "complete", "round": 2}}

@@ -36,6 +36,13 @@ from starter.rasa_half.validator import normalise_booking_payload
 
 RASA_REST_WEBHOOK_DEFAULT = "http://localhost:5005/webhooks/rest/webhook"
 _SOLUTION_EX6 = Path(__file__).resolve().parent
+_VENUE_CAPACITY = {
+    "haymarket_tap": 8,
+    "royal_oak": 16,
+    "bennets_bar": 24,
+    "cafe_royal": 40,
+    "sheep_heid": 0,
+}
 
 
 class RasaStructuredHalf(StructuredHalf):
@@ -536,6 +543,8 @@ class _MockRasaHandler(BaseHTTPRequestHandler):
         booking = payload.get("metadata", {}).get("booking", {})
         party = booking.get("party_size")
         deposit = booking.get("deposit_gbp", 0)
+        venue_id = booking.get("venue_id")
+        venue_cap = _VENUE_CAPACITY.get(str(venue_id), 8)
 
         if not party:
             response = [
@@ -544,7 +553,7 @@ class _MockRasaHandler(BaseHTTPRequestHandler):
                     "custom": {"action": "rejected", "reason": "missing_party_size"},
                 }
             ]
-        elif party > 8:
+        elif party > venue_cap:
             response = [
                 {
                     "text": "Sorry, we can't accept this booking. Reason: party_too_large",

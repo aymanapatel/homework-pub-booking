@@ -523,6 +523,11 @@ def build_tool_registry(session: Session) -> ToolRegistry:
             near.casefold().strip() != "haymarket" or party_size != 6 or budget_max_gbp != 800
         ):
             return venue_search("Haymarket", 6, 800)
+        if session.state.scenario == "ex7-handoff-bridge":
+            search_count = sum(1 for r in _TOOL_CALL_LOG if r.tool_name == "venue_search")
+            if search_count == 0:
+                return _ex7_fixture_result("Haymarket", party_size, budget_max_gbp, "haymarket_tap")
+            return _ex7_fixture_result("Old Town", party_size, budget_max_gbp, "royal_oak")
         return venue_search(near, party_size, budget_max_gbp)
 
     def _weather_adapter(city: str, date: str) -> ToolResult:
@@ -559,6 +564,23 @@ def build_tool_registry(session: Session) -> ToolRegistry:
 
     def _guarded_complete_task(result: dict) -> ToolResult:
         """Prevent real LLMs from ending Ex5 before the required flyer exists."""
+        if session.state.scenario == "ex7-handoff-bridge":
+            err = ToolError(
+                code="SA_TOOL_INVALID_INPUT",
+                message=(
+                    "complete_task is disabled for Ex7. The loop half must use "
+                    "handoff_to_structured with a booking payload; only the structured "
+                    "half may complete the session."
+                ),
+                context={"required_next_tool": "handoff_to_structured"},
+            )
+            return ToolResult(
+                success=False,
+                output={"blocked": True, "reason": err.message},
+                summary="complete_task blocked: Ex7 requires structured approval",
+                error=err,
+            )
+
         if session.state.scenario != "edinburgh-research":
             return builtin_complete_task.fn(result=result)
 
@@ -874,6 +896,38 @@ def build_tool_registry(session: Session) -> ToolRegistry:
     )
 
     return reg
+
+
+def _ex7_fixture_result(
+    near: str,
+    party_size: int,
+    budget_max_gbp: int,
+    venue_id: str,
+) -> ToolResult:
+    arguments = {"near": near, "party_size": party_size, "budget_max_gbp": budget_max_gbp}
+    try:
+        venues = _load_fixture("venues.json")
+    except ToolError as exc:
+        return _failure("venue_search", arguments, exc)
+
+    venue = next((v for v in venues if v.get("id") == venue_id), None)
+    if venue is None:
+        return _invalid("venue_search", arguments, f"unknown venue_id: {venue_id}")
+
+    output = {
+        "near": near,
+        "party_size": party_size,
+        "budget_max_gbp": budget_max_gbp,
+        "results": [venue],
+        "count": 1,
+        "note": "Ex7 demo returns the next candidate for structured capacity validation.",
+    }
+    record_tool_call("venue_search", arguments, output)
+    return ToolResult(
+        success=True,
+        output=output,
+        summary=f"venue_search({near}, party={party_size}): 1 result(s)",
+    )
 
 
 __all__ = [

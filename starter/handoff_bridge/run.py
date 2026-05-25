@@ -22,7 +22,7 @@ from sovereign_agent.session.directory import create_session
 
 from starter.edinburgh_research.tools import build_tool_registry
 from starter.handoff_bridge.bridge import HandoffBridge
-from starter.rasa_half.structured_half import RasaStructuredHalf, spawn_mock_rasa
+from starter.rasa_half.structured_half import RasaHostLifecycle, RasaStructuredHalf, spawn_mock_rasa
 
 
 def _build_fake_client_two_rounds() -> FakeLLMClient:
@@ -89,29 +89,29 @@ def _build_fake_client_two_rounds() -> FakeLLMClient:
             ),
             # === ROUND 2 (after reverse handoff from structured rejecting party=12) ===
             ScriptedResponse(content=plan_r2),  # planner turn 2
-            ScriptedResponse(  # executor turn 1: new search with smaller party
+            ScriptedResponse(  # executor turn 1: new search for larger venue
                 tool_calls=[
                     ToolCall(
                         id="c3",
                         name="venue_search",
-                        arguments={"near": "Old Town", "party_size": 6, "budget_max_gbp": 2000},
+                        arguments={"near": "Old Town", "party_size": 12, "budget_max_gbp": 2000},
                     )
                 ]
             ),
-            ScriptedResponse(  # executor turn 2: handoff royal_oak with party=6
+            ScriptedResponse(  # executor turn 2: handoff royal_oak with party=12
                 tool_calls=[
                     ToolCall(
                         id="c4",
                         name="handoff_to_structured",
                         arguments={
-                            "reason": "retry after reverse handoff — scaled down to fit policy",
-                            "context": "party was originally 12; rejected; re-proposing party of 6 at royal_oak (16 seats)",
+                            "reason": "retry after reverse handoff with a venue large enough for the original party",
+                            "context": "party of 12 on 2026-04-25 19:30; re-proposing royal_oak (16 seats)",
                             "data": {
                                 "action": "confirm_booking",
                                 "venue_id": "The Royal Oak",
                                 "date": "2026-04-25",
                                 "time": "19:30",
-                                "party_size": "6",
+                                "party_size": "12",
                                 "deposit": "£0",
                             },
                         },
@@ -134,11 +134,14 @@ async def run_scenario(real: bool) -> int:
 
         # Spawn mock Rasa unless --real
         server = None
+        lifecycle = None
         if not real:
             server, _thread, mock_url = spawn_mock_rasa(port=5906)
             rasa_half = RasaStructuredHalf(rasa_url=mock_url)
         else:
-            rasa_half = RasaStructuredHalf()
+            lifecycle = RasaHostLifecycle(log_dir=session.directory / "logs")
+            rasa_url = await lifecycle.__aenter__()
+            rasa_half = RasaStructuredHalf(rasa_url=rasa_url)
 
         if real:
             from sovereign_agent.config import Config
@@ -172,6 +175,8 @@ async def run_scenario(real: bool) -> int:
         try:
             result = await bridge.run(session, {"task": "book for party of 12 in Haymarket"})
         finally:
+            if lifecycle is not None:
+                await lifecycle.__aexit__(None, None, None)
             if server is not None:
                 server.shutdown()
 

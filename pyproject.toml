@@ -17,6 +17,8 @@ dependencies = [
 
 [project.optional-dependencies]
 voice = [
+  # speechmatics-python still imports pkg_resources on Python 3.12.
+  "setuptools >= 68, < 81",
   # Speechmatics real-time Python client (STT).
   "speechmatics-python >= 1.11.0",
   # Rime.ai has no official Python SDK; we call the REST API directly.
