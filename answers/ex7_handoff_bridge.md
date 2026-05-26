@@ -6,6 +6,8 @@ The Ex7 bridge run in `session_logs/examples/ex7-handoff-bridge/sess_11d93c3e817
 
 The bridge preserved that rejection as a reverse handoff signal. Line 9 records `session.state_changed` from `structured` back to `loop` with the rejection reason included. Round 2 starts at line 10, and the planner prompt at line 11 explicitly contains the structured rejection and asks for an alternative. After additional venue search calls at lines 13-14, the bridge hands off again at line 15. This time the structured half normalises a `royal_oak` booking at line 17, completes it with booking reference `BK-9B8DBC29` at line 18, and the bridge marks the session complete at line 19. The trace therefore shows both forward context transfer and reverse rejection handling within two rounds.
 
+Compared with the upstream answer, this local explanation also grounds the same bridge design in concrete trace evidence. `HandoffBridge.run` is responsible for the round loop, the `session.state_changed` audit events, and stale forward-handoff cleanup after structured escalation. The Ex7 integrity check then verifies that the bridge did real work by requiring round-start, state-change, and tool-call events rather than accepting a claimed completion with no trace.
+
 ## Citations
 
 - `session_logs/examples/ex7-handoff-bridge/sess_11d93c3e817e/logs/trace.jsonl`, lines 1-19 — round starts, handoffs, rejection, and completion
